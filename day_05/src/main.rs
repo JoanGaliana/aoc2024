@@ -1,5 +1,6 @@
+#![feature(extract_if)]
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, LinkedList},
     fs,
 };
 
@@ -10,9 +11,10 @@ fn main() {
     let input = read_input();
 
     let first_result = solve_first(&input);
+    let second_result = solve_second(&input);
 
     println!("First result: {first_result}");
-    //println!("Second result: {second_result}");
+    println!("Second result: {second_result}");
 }
 
 fn solve_first(input: &Input) -> Num {
@@ -36,40 +38,48 @@ fn solve_first(input: &Input) -> Num {
 
             true
         })
-        .map(|rule| {
-            rule.get(rule.len() / 2)
-                .map(u32::to_owned)
-                .unwrap_or_default()
-        })
+        .map(|rule| rule[rule.len() / 2])
         .sum()
 }
 
-fn solve_first(input: &Input) -> Num {
+fn solve_second(input: &Input) -> Num {
     input
         .rules
         .iter()
-        .filter(|rule| {
-            let mut incompatibilities: HashSet<Num> = HashSet::new();
+        .filter_map(|rule| {
+            let mut pending = LinkedList::from_iter(rule.iter().cloned());
+            let mut rule: Vec<u32> = Vec::new();
+            let mut changes = 0;
 
-            for num in rule.iter() {
-                if incompatibilities.contains(num) {
-                    return false;
+            while !pending.is_empty() {
+                let num = pending.front().unwrap();
+
+                let incompatibilities = input.requirements.get(&num);
+
+                if let Some(incompatibilities) = incompatibilities {
+                    let first_incompability = incompatibilities
+                        .iter()
+                        .filter_map(|incompatibilty| {
+                            pending.extract_if(|n| n == incompatibilty).next()
+                        })
+                        .next();
+                    if let Some(first_incompability) = first_incompability {
+                        pending.push_front(first_incompability.to_owned());
+                        changes += 1;
+                        continue;
+                    }
                 }
 
-                if let Some(requirements) = input.requirements.get(num) {
-                    requirements.iter().for_each(|requirement| {
-                        incompatibilities.insert(requirement.to_owned());
-                    });
-                }
+                rule.push(pending.pop_front().unwrap());
             }
 
-            true
+            if changes == 0 {
+                return None;
+            }
+
+            Some(rule)
         })
-        .map(|rule| {
-            rule.get(rule.len() / 2)
-                .map(u32::to_owned)
-                .unwrap_or_default()
-        })
+        .map(|rule| rule[rule.len() / 2].to_owned())
         .sum()
 }
 
