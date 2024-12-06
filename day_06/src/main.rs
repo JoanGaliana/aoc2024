@@ -14,36 +14,6 @@ fn main() {
     println!("Second result: {second_result}");
 }
 
-#[derive(Eq, Hash, Debug, PartialEq, Default, Clone, Copy)]
-struct Coord {
-    x: Num,
-    y: Num,
-}
-
-impl Coord {
-    fn new(x: Num, y: Num) -> Self {
-        Coord { x, y }
-    }
-
-    fn sum(&self, other: &Self) -> Coord {
-        Coord {
-            x: self.x + other.x,
-            y: self.y + other.y,
-        }
-    }
-}
-
-fn is_in_boundaries(Coord { x, y }: &Coord, max_x: Num, max_y: Num) -> bool {
-    (0..max_x).contains(x) && (0..max_y).contains(y)
-}
-
-fn is_obstacle(coord: &Coord, board: &Board) -> bool {
-    let x = usize::try_from(coord.x).unwrap();
-    let y = usize::try_from(coord.y).unwrap();
-
-    board[y][x] == Tile::Obstacle
-}
-
 fn solve_first(input: &Input) -> (usize, HashSet<Coord>) {
     let mut current_position = input.position;
     let mut current_orientation = input.orientation;
@@ -118,6 +88,63 @@ fn check_loop(input: &Input, blocked_coord: &Coord) -> bool {
     false
 }
 
+fn read_input() -> Input {
+    let contents = fs::read_to_string(FILE_PATH).expect("Should have been able to read the file");
+    let mut input = Input::default();
+
+    for (line_num, line) in contents.lines().enumerate() {
+        let board_line = line
+            .chars()
+            .enumerate()
+            .map(|(i, c)| {
+                let tile = Tile::try_from(c).unwrap();
+
+                if let Tile::Guard(orientation) = tile {
+                    input.position =
+                        Coord::new(Num::try_from(i).unwrap(), Num::try_from(line_num).unwrap());
+                    input.orientation = orientation;
+                };
+
+                tile
+            })
+            .collect();
+
+        input.board.push(board_line);
+    }
+
+    input
+}
+
+#[derive(Eq, Hash, Debug, PartialEq, Default, Clone, Copy)]
+struct Coord {
+    x: Num,
+    y: Num,
+}
+
+impl Coord {
+    fn new(x: Num, y: Num) -> Self {
+        Coord { x, y }
+    }
+
+    fn sum(&self, other: &Self) -> Coord {
+        Coord {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+fn is_in_boundaries(Coord { x, y }: &Coord, max_x: Num, max_y: Num) -> bool {
+    (0..max_x).contains(x) && (0..max_y).contains(y)
+}
+
+fn is_obstacle(coord: &Coord, board: &Board) -> bool {
+    let x = usize::try_from(coord.x).unwrap();
+    let y = usize::try_from(coord.y).unwrap();
+
+    board[y][x] == Tile::Obstacle
+}
+
 #[derive(Default, Debug, PartialEq, Clone, Copy, Eq, Hash)]
 enum Orientation {
     #[default]
@@ -168,33 +195,6 @@ impl TryFrom<char> for Tile {
             _ => Err(()),
         }
     }
-}
-
-fn read_input() -> Input {
-    let contents = fs::read_to_string(FILE_PATH).expect("Should have been able to read the file");
-    let mut input = Input::default();
-
-    for (line_num, line) in contents.lines().enumerate() {
-        let board_line = line
-            .chars()
-            .enumerate()
-            .map(|(i, c)| {
-                let tile = Tile::try_from(c).unwrap();
-
-                if let Tile::Guard(orientation) = tile {
-                    input.position =
-                        Coord::new(Num::try_from(i).unwrap(), Num::try_from(line_num).unwrap());
-                    input.orientation = orientation;
-                };
-
-                tile
-            })
-            .collect();
-
-        input.board.push(board_line);
-    }
-
-    input
 }
 
 type Board = Vec<Vec<Tile>>;
