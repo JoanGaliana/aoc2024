@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::{collections::HashSet, fs};
 
 //const FILE_PATH: &str = "./example_input.txt";
@@ -81,7 +82,7 @@ fn solve_second(input: &Input, stepped_in_coords: &HashSet<Coord>) -> usize {
     // For every position on guard steps in, create a obstacle and check for loops
     // We are not interested on creating obstacles on positions where guard won't step into
     stepped_in_coords
-        .iter()
+        .par_iter()
         .filter(|new_obstacle| check_loop(input, new_obstacle))
         .count()
 }
