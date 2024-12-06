@@ -6,8 +6,8 @@ const FILE_PATH: &str = "./input.txt";
 fn main() {
     let input = read_input();
 
-    let (first_result, possible_new_obstacles) = solve_first(&input);
-    let second_result = solve_second(&input, &possible_new_obstacles);
+    let (first_result, stepped_in_coords) = solve_first(&input);
+    let second_result = solve_second(&input, &stepped_in_coords);
 
     println!("First result: {first_result}");
     println!("Second result: {second_result}");
@@ -53,7 +53,7 @@ fn solve_first(input: &Input) -> (usize, HashSet<Coord>) {
     let mut visited: HashSet<Coord> = HashSet::new();
 
     // Store every position guard moves into
-    let mut possible_new_obstacles = HashSet::new();
+    let mut stepped_in_coords = HashSet::new();
 
     while is_in_boundaries(&current_position, max_x, max_y) {
         visited.insert(current_position.clone());
@@ -69,18 +69,18 @@ fn solve_first(input: &Input) -> (usize, HashSet<Coord>) {
         if is_obstacle(&next_position, &input.board) {
             current_orientation.rotate();
         } else {
-            possible_new_obstacles.insert(next_position.clone());
+            stepped_in_coords.insert(next_position.clone());
             current_position = next_position;
         }
     }
 
-    (visited.len(), possible_new_obstacles)
+    (visited.len(), stepped_in_coords)
 }
 
-fn solve_second(input: &Input, possible_new_obstacles: &HashSet<Coord>) -> usize {
-    // For every position on guard's path, create a obstacle and check for loops
+fn solve_second(input: &Input, stepped_in_coords: &HashSet<Coord>) -> usize {
+    // For every position on guard steps in, create a obstacle and check for loops
     // We are not interested on creating obstacles on positions where guard won't step into
-    possible_new_obstacles
+    stepped_in_coords
         .iter()
         .filter(|new_obstacle| check_loop(input, new_obstacle))
         .count()
