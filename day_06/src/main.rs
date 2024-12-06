@@ -14,7 +14,7 @@ fn main() {
     println!("Second result: {second_result}");
 }
 
-#[derive(Eq, Hash, Debug, PartialEq, Default, Clone)]
+#[derive(Eq, Hash, Debug, PartialEq, Default, Clone, Copy)]
 struct Coord {
     x: Num,
     y: Num,
@@ -45,7 +45,7 @@ fn is_obstacle(coord: &Coord, board: &Board) -> bool {
 }
 
 fn solve_first(input: &Input) -> (usize, HashSet<Coord>) {
-    let mut current_position = input.position.clone();
+    let mut current_position = input.position;
     let mut current_orientation = input.orientation;
 
     let max_y = input.board.len() as Num;
@@ -57,7 +57,7 @@ fn solve_first(input: &Input) -> (usize, HashSet<Coord>) {
     let mut stepped_in_coords = HashSet::new();
 
     while is_in_boundaries(&current_position, max_x, max_y) {
-        visited.insert(current_position.clone());
+        visited.insert(current_position);
 
         let next_move = current_orientation.get_move();
         let next_position = current_position.sum(&next_move);
@@ -70,7 +70,7 @@ fn solve_first(input: &Input) -> (usize, HashSet<Coord>) {
         if is_obstacle(&next_position, &input.board) {
             current_orientation.rotate();
         } else {
-            stepped_in_coords.insert(next_position.clone());
+            stepped_in_coords.insert(next_position);
             current_position = next_position;
         }
     }
@@ -87,17 +87,16 @@ fn solve_second(input: &Input, stepped_in_coords: &HashSet<Coord>) -> usize {
         .count()
 }
 
-const MAX_TURNS: usize = 100000;
 fn check_loop(input: &Input, blocked_coord: &Coord) -> bool {
-    let mut turns = 0;
-    let mut current_position = input.position.clone();
+    let mut current_position = input.position;
     let mut current_orientation = input.orientation;
+    let mut visited: HashSet<(Coord, Orientation)> = HashSet::new();
 
     let max_y = input.board.len() as Num;
     let max_x = input.board[0].len() as Num;
 
     while is_in_boundaries(&current_position, max_x, max_y) {
-        if turns >= MAX_TURNS {
+        if visited.contains(&(current_position, current_orientation)) {
             return true;
         }
 
@@ -110,8 +109,8 @@ fn check_loop(input: &Input, blocked_coord: &Coord) -> bool {
 
         if &next_position == blocked_coord || is_obstacle(&next_position, &input.board) {
             current_orientation.rotate();
-            turns += 1;
         } else {
+            visited.insert((current_position, current_orientation));
             current_position = next_position;
         }
     }
@@ -119,7 +118,7 @@ fn check_loop(input: &Input, blocked_coord: &Coord) -> bool {
     false
 }
 
-#[derive(Default, Debug, PartialEq, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, Clone, Copy, Eq, Hash)]
 enum Orientation {
     #[default]
     Up,
