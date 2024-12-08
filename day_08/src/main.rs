@@ -72,9 +72,9 @@ impl Iterator for LinedAntinodesIter {
     type Item = Coord;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let antinode = self
-            .base_coord
-            .add_num(self.diff_x * self.index, self.diff_y * self.index);
+        let x = self.diff_x * self.index;
+        let y = self.diff_y * self.index;
+        let antinode = self.base_coord.add_num(x, y);
 
         self.index += 1;
 
