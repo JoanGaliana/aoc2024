@@ -20,6 +20,7 @@ fn solve_first(input: &[Input]) -> usize {
         .map(|line| line.test_value)
         .sum()
 }
+
 fn check_valid(current_value: Num, pos: usize, input: &Input) -> bool {
     if current_value == input.test_value && pos == input.operands.len() {
         return true;

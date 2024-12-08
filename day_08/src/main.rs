@@ -10,22 +10,48 @@ fn main() {
     let input = read_input();
 
     let first_result = solve_first(&input);
-    // let second_result = solve_second(&input);
+    let second_result = solve_second(&input);
 
     println!("First result:  {first_result}");
-    //  println!("Second result: {second_result}");
+    println!("Second result: {second_result}");
 }
 
 fn solve_first(input: &Input) -> usize {
     let width = Num::try_from(input.width).unwrap();
     let mut antinodes: HashSet<Coord> = Default::default();
+
     for coords in input.nodes.values() {
         for i in 0..coords.len() {
-            for j in i + 1..coords.len() {
-                let antinode = coords[i].get_antinodes(&coords[j]);
-                antinode
-                    .into_iter()
-                    .filter(|coord| coord.is_in_bounds(width))
+            for j in 0..coords.len() {
+                if i == j {
+                    continue;
+                }
+
+                let antinode = coords[i].get_antinode(&coords[j]);
+
+                if antinode.is_in_bounds(width) {
+                    antinodes.insert(antinode);
+                }
+            }
+        }
+    }
+
+    antinodes.len()
+}
+
+fn solve_second(input: &Input) -> usize {
+    let width = Num::try_from(input.width).unwrap();
+    let mut antinodes: HashSet<Coord> = Default::default();
+
+    for coords in input.nodes.values() {
+        for i in 0..coords.len() {
+            for j in 0..coords.len() {
+                if i == j {
+                    continue;
+                }
+
+                LinedAntinodesIter::new(&coords[i], &coords[j])
+                    .take_while(|coord| coord.is_in_bounds(width))
                     .for_each(|coord| {
                         antinodes.insert(coord);
                     });
@@ -34,6 +60,40 @@ fn solve_first(input: &Input) -> usize {
     }
 
     antinodes.len()
+}
+struct LinedAntinodesIter {
+    base_coord: Coord,
+    diff_x: Num,
+    diff_y: Num,
+    index: Num,
+}
+
+impl Iterator for LinedAntinodesIter {
+    type Item = Coord;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let antinode = self
+            .base_coord
+            .add_num(self.diff_x * self.index, self.diff_y * self.index);
+
+        self.index += 1;
+
+        Some(antinode)
+    }
+}
+
+impl LinedAntinodesIter {
+    fn new(base_coord: &Coord, other: &Coord) -> Self {
+        let diff_x = other.x - base_coord.x;
+        let diff_y = other.y - base_coord.y;
+
+        Self {
+            base_coord: *base_coord,
+            diff_x,
+            diff_y,
+            index: 1,
+        }
+    }
 }
 
 fn read_input() -> Input {
@@ -68,14 +128,11 @@ struct Coord {
     y: Num,
 }
 impl Coord {
-    fn get_antinodes(&self, other: &Coord) -> [Coord; 2] {
+    fn get_antinode(&self, other: &Coord) -> Coord {
         let x_distance = self.x - other.x;
         let y_distance = self.y - other.y;
 
-        [
-            self.add_num(x_distance, y_distance),
-            other.add_num(-x_distance, -y_distance),
-        ]
+        self.add_num(x_distance, y_distance)
     }
 
     fn add_num(&self, x: Num, y: Num) -> Coord {
@@ -92,6 +149,7 @@ impl Coord {
         }
     }
 
+    #[allow(dead_code)]
     fn new(x: Num, y: Num) -> Coord {
         Coord { x, y }
     }
@@ -108,17 +166,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn get_antinodes() {
-        let expected = [Coord::new(3, 1), Coord::new(6, 7)];
+    fn get_antinode() {
+        let expected = Coord::new(3, 1);
 
         let fist = Coord::new(4, 3);
         let second = Coord::new(5, 5);
 
-        let result = fist.get_antinodes(&second);
+        let result = fist.get_antinode(&second);
         assert_eq!(expected, result);
 
-        let mut result = second.get_antinodes(&fist);
-        result.reverse();
+        let expected = Coord::new(6, 7);
+        let result = second.get_antinode(&fist);
 
         assert_eq!(expected, result);
     }
